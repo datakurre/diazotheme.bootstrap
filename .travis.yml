@@ -1,0 +1,35 @@
+language: python
+python:
+- 2.7
+before_install:
+- export DISPLAY=:99.0
+- sh -e /etc/init.d/xvfb start
+install:
+- git clone https://github.com/plone/plone.themepreview ../themepreview
+- cd ../themepreview
+- mkdir -p buildout-cache/downloads build/html
+- python bootstrap.py -c travis.cfg
+- bin/buildout -c travis.cfg buildout:develop=../diazotheme.bootstrap buildout:eggs=diazotheme.bootstrap
+before_script:
+- gem install --version 0.8.9 faraday
+- gem install travis-artifacts
+script:
+- bin/sphinx-build -b html source build/html
+after_script:
+- travis-artifacts upload --path build/html
+env:
+  global:
+  - ARTIFACTS_S3_BUCKET=diazotheme.bootstrap
+  - SPHINX_PROJECT=diazotheme.bootstrap
+  - SPHINX_COPYRIGHT=Collective
+  - ROBOT_CONFIGURE_PACKAGES=diazotheme.bootstrap
+  - ROBOT_APPLY_PROFILES=plone.app.theming:default,diazotheme.bootstrap:default
+  - secure: AwtEcur3pJsh6E/Bfpa2z5x+xP4MaRcQXpv3OHJR288ToYGftR+fl4z0JXg6T1A7hENGyG1wBfI9bklJD2R6tL0MsyZGrHL1QNaWzYwgbLt4GSJQAtGoELqb8xYfaKdQj1M32ZrxhsqsRSYqcQAs8MrcDiWP2WtVQmQD6Y49eZ0=
+  - secure: Wfjqjx3X2ig+BLsR0+XHmXSVad2GdRq9jKlv7rTycGc8bNVsA59EDzET0VDZViH7xaq5ON+eQY4N5ZXizElhlPitreJwrQ+xyHGzmSh8qBGWZtS8yPupufEbzSh1HyCJLRTPcXKohd7qX7bVYAChhaoUsIT8uZzyRfL2O4n7Bc4=
+notifications:
+  irc:
+    channels:
+    - irc.freenode.org#plone-docs
+    template:
+    - ! '%{repository}#%{build_number} (%{branch} | %{commit} | %{author}): %{message}'
+    - ! 'Sphinx: http://diazotheme.bootstrap.s3-website-us-east-1.amazonaws.com/artifacts/%{build_number}/%{build_number}.1/'
